@@ -1,0 +1,5 @@
+icecream==2.1.1
+requests
+cad_tickers==1.5.2
+selenium
+tdqm
