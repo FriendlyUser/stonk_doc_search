@@ -38,12 +38,12 @@ def mk_dir(dir_name: str):
     if not os.path.exists(dir_name):
         os.mkdir(dir_name)
 
-def main(stock_name: str = "PKK", start_date = "2020-09-03", end_date = "2021-12-03"):
+def get_stonk_data(stock_name: str = "PKK", start_date = "2020-09-03", end_date = "2021-12-03"):
     ic("Eating ice cream")
     filings_data = get_ticker_filings(stock_name, start_date, end_date, 2000)
     filings = filings_data.get("filings")
     ic(filings)
-    mk_dir(f"docs/{stock_name}")
+    mk_dir(f"../docs/{stock_name}")
     total_downloads = 0
     startTime = time.time()
     # use tqdm to show progress bar
@@ -87,7 +87,6 @@ def get_pdf_from_url(
         WebDriverWait(driver, 5).until(EC.presence_of_element_located((By.TAG_NAME, 'iframe')))
     except TimeoutException:
         time.sleep(2)
-        pass
     pdf_url = driver.find_element(By.TAG_NAME, 'iframe').get_attribute("src")
     driver.quit()
     chunk_size  = 2000
