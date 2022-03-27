@@ -4,7 +4,7 @@ from icecream import ic
 import time
 import os
 from tqdm import tqdm
-from cad_tickers.sedar.tsx import get_ticker_filings
+from cad_tickers.sedar.tsx import get_ticker_filings, get_news_and_events
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException
@@ -43,6 +43,54 @@ def get_stonk_data(stock_name: str = "PKK", start_date = "2020-09-03", end_date 
     filings_data = get_ticker_filings(stock_name, start_date, end_date, 2000)
     filings = filings_data.get("filings")
     ic(filings)
+    if filings is None:
+        return
+    mk_dir(f"docs/{stock_name}")
+    total_downloads = 0
+    startTime = time.time()
+    # use tqdm to show progress bar
+    for filing in tqdm(filings, desc = f'Downloading PDFs for {stock_name}'):
+        # get data tp
+        filing_date = filing.get("filingDate")
+        description = filing.get("description", "")
+        description = description.replace(" ", "_")
+        name = filing.get("name", "")
+        name = name.replace("-", " ").replace(" ", "_").replace("/", "_")
+        pdf_url = filing.get("urlToPdf")
+        pdf_name = f"docs/{stock_name}/{filing_date}_{name}.pdf"
+        # if file exists skip
+        if os.path.exists(pdf_name):
+            ic(f"Skipping {pdf_name}")
+            continue
+        else:
+            total_downloads += 1
+            ic(f"Downloading {pdf_name}")
+            try:
+                get_pdf_from_url(pdf_url, pdf_name)
+            except Exception as e:
+                print(e)
+                print(f"Skipping {pdf_name}")
+                continue
+
+    # get all urls from data
+    executionTime = (time.time() - startTime)
+    print('Execution time in seconds: ' + str(executionTime))
+    print(f"Total downloads: {total_downloads}")
+    if total_downloads == 0:
+        print("No filings found")
+    else:
+        print(f"Average dl time: {executionTime / total_downloads}")
+
+
+
+def get_stonk_data_news(stock_name: str = "PKK", start_date = "2020-09-03", end_date = "2021-12-03"):
+    ic("Eating ice cream")
+    filings_data = get_news_and_events(stock_name, 1, 1000)
+    filings = filings_data.get("news")
+    if filings is None:
+        ic("NO FILINGS")
+        return
+    ic(filings)
     mk_dir(f"../docs/{stock_name}")
     total_downloads = 0
     startTime = time.time()
@@ -63,7 +111,12 @@ def get_stonk_data(stock_name: str = "PKK", start_date = "2020-09-03", end_date 
         else:
             total_downloads += 1
             ic(f"Downloading {pdf_name}")
-            get_pdf_from_url(pdf_url, pdf_name)
+            try:
+                get_pdf_from_url(pdf_url, pdf_name)
+            except Exception as e:
+                print(e)
+                print(f"Skipping {pdf_name}")
+                continue
 
     # get all urls from data
     executionTime = (time.time() - startTime)
@@ -103,4 +156,4 @@ if __name__ == "__main__":
     parser.add_argument('--end_date', help='End date for filings', default="2021-12-03")
     args = parser.parse_args()
     ic("Running script with args: {}".format(args))
-    main(args.stock, args.start_date, args.end_date)
+    get_stonk_data(args.stock, args.start_date, args.end_date)
